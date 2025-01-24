@@ -1,7 +1,7 @@
 # Set the working directory
 setwd("C:/Users/giuli/Desktop/Ensenfentrine")
 
-# Load the libraries
+# Load the librdata_setes
 library(dosresmeta)
 library(rms)
 library(mvtnorm)
@@ -14,11 +14,7 @@ library(scales)
 library(directlabels)
 
 # Load dataset
-ari <- read_excel("C:/Users/giuli/Desktop/Ensenfentrine/ari.xlsx", sheet = "MORNING")
-
-# Converter MD (y) e SD de litros para mililitros
-ari$y <- ari$y * 1000
-ari$sd <- ari$sd * 1000
+data_set <- read_excel("C:/Users/pathway/data_set.xlsx", sheet = "outcome")
 
 # Auxiliary function to estimate target doses (to be implemented in dosresmeta pkg)
 doseEff <- function(p, dose, Ep, trunc = FALSE){
@@ -30,26 +26,26 @@ doseEff <- function(p, dose, Ep, trunc = FALSE){
   data.frame(p, ED, Ep = p * max_Ep)
 }
 
-## Obtaining mean differences, variances, and (co)variance matrices for all the studies
-cov.md <- by(ari, ari$id, function(x) covar.smd(y, sd, n, "md", data = x))
-ari$md <- unlist(lapply(cov.md, function(x) x$y))
-ari$vmd <- unlist(lapply(cov.md, function(x) x$v))
+## Obtaining mean differences, vdata_setances, and (co)vdata_setance matrices for all the studies
+cov.md <- by(data_set, data_set$id, function(x) covar.smd(y, sd, n, "md", data = x))
+data_set$md <- unlist(lapply(cov.md, function(x) x$y))
+data_set$vmd <- unlist(lapply(cov.md, function(x) x$v))
 
 # Define knots
-knots <- quantile(ari$dose, c(.25, .5, .75))
+knots <- quantile(data_set$dose, c(.25, .5, .75))
 
 ## Dose-response meta-analysis
 spl <- dosresmeta(formula = y ~ rcs(dose, knots), id = id, sd = sd, n = n, 
-                  covariance = "md", data = ari)
+                  covdata_setance = "md", data = data_set)
 
-## Summary of the model, print coefficients and covariance matrix
+## Summary of the model, print coefficients and covdata_setance matrix
 summary(spl)
 round(coef(spl), 3)
 round(vcov(spl), 2)
 
 # Peak dose, CI, and mean difference
 p <- 0.95 # Max effect
-newdata <- data.frame(dose = seq(0, max(ari$dose), length.out = 5000))
+newdata <- data.frame(dose = seq(0, max(data_set$dose), length.out = 5000))
 edp <- with(predict(spl, newdata), 
             doseEff(p = p, dose = newdata$dose, Ep = pred, trunc = FALSE))
 
@@ -74,7 +70,7 @@ cat("Peak Dose:", edp$ED, "mg/day\n")
 cat("95% Confidence Interval for Peak Dose:", ci_peak[[1]], "mg/day\n")
 
 # Generate predictions over a range of doses
-dose_range <- seq(0, max(ari$dose), length.out = 100)
+dose_range <- seq(0, max(data_set$dose), length.out = 100)
 newdata_range <- data.frame(dose = dose_range)
 preds <- predict(spl, newdata = newdata_range)
 
@@ -88,9 +84,9 @@ cat("Mean Difference at Peak Dose:", round(md_at_peak, 3), "L\n")
 cat("95% Confidence Interval for MD at Peak Dose:", round(c(ci_md_lb, ci_md_ub), 3), "L\n")
 
 # Perform leave-one-out dose-response meta-analysis
-spl_l1o <- lapply(unique(ari$id), function(i)
+spl_l1o <- lapply(unique(data_set$id), function(i)
   dosresmeta(formula = y ~ rcs(dose, knots), id = id, sd = sd, n = n, 
-             covariance = "md", data = subset(ari, id != i))
+             covdata_setance = "md", data = subset(data_set, id != i))
 )
 
 # Graphical presentation of leave-one-out analysis with customizations
@@ -99,7 +95,7 @@ spl_l1o <- lapply(unique(ari$id), function(i)
 library(RColorBrewer)
 
 # Define the colors for each study
-study_names <- unique(ari$author)  # Assuming 'author' contains the study names
+study_names <- unique(data_set$author)  # Assuming 'author' contains the study names
 colors <- c("#9b6a00","#efbc4d","#E69F00", "#56B4E9","#89c4e7", "#3a799e")
 names(colors) <- study_names
   
@@ -111,13 +107,13 @@ newd <- data.frame(dose = dose_range)
 p <- newd %>% 
   cbind(do.call("cbind", lapply(spl_l1o, function(m) predict(m, newdata = .)$pred))) %>%
   gather(study, pred, -dose) %>%
-  mutate(study = factor(study, levels = 1:length(unique(ari$id)), labels = unique(ari$author))) %>% 
+  mutate(study = factor(study, levels = 1:length(unique(data_set$id)), labels = unique(data_set$author))) %>% 
   ggplot(aes(dose, pred, col = study, label = study)) +
   geom_line(linewidth = 1) +  # Increase line width
   scale_colour_manual(values = colors) +  # Apply custom color palette
   geom_dl(aes(label = study), method = list(dl.trans(x = x + .5), 'last.qp')) +
   geom_hline(yintercept = seq(0, 120, by =20), linetype = "dashed", color = "gray") +  # Add dashed lines for MD
-  labs(x = "Ensifentrine (mg/day)", y = "Mean Difference", col = "Excluded study") +
+  labs(x = "Drug (mg/day)", y = "Mean Difference", col = "Excluded study") +
   theme_classic() +
   theme(
     axis.title = element_text(face = "bold", size = 14, margin = margin(t = 10, r = 10, b = 10, l = 10)),
@@ -130,7 +126,7 @@ p <- newd %>%
   )
 
 # Save the plot using ggsave()
-ggsave("MORNING_leave_one_out_analysis.tiff", plot = p, width = 8, height = 6, units = "in", dpi = 300)
+ggsave("outcome_leave_one_out_analysis.tiff", plot = p, width = 8, height = 6, units = "in", dpi = 300)
 
 
 }
