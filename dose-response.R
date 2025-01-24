@@ -1,7 +1,7 @@
 # Set the working directory
-setwd("C:/Users/giuli/Desktop/Ensenfentrine")
+setwd("C:/Users/pathway")
 
-# Load the libraries
+# Load the librdata_setes
 library(dosresmeta)
 library(rms)
 library(mvtnorm)
@@ -12,14 +12,7 @@ library(mvmeta)
 
 
 # Load dataset
-ari <- read_excel("C:/Users/giuli/Desktop/Ensenfentrine/ari.xlsx", sheet = "PEAKFEV1LAST")
-
-ari 
-
-# Converter MD (y) e SD de litros para mililitros
-ari$y <- ari$y * 1000
-ari$sd <- ari$sd * 1000
-
+data_set <- read_excel("C:/Users/pathway/data_set.xlsx", sheet = "outcome")
 
 # Auxiliary function to estimate target doses (to be implemented in dosresmeta pkg)
 doseEff <- function(p, dose, Ep, trunc = FALSE){
@@ -31,19 +24,19 @@ doseEff <- function(p, dose, Ep, trunc = FALSE){
   data.frame(p, ED, Ep = p * max_Ep)
 }
 
-## Obtaining mean differences, variances, and (co)varinace matrices for the all the studies
-cov.md <- by(ari, ari$id, function(x) covar.smd(y, sd, n, "md", data = x))
-ari$md <- unlist(lapply(cov.md, function(x) x$y))
-ari$vmd <- unlist(lapply(cov.md, function(x) x$v))
+## Obtaining mean differences, vdata_setances, and (co)vdata_setnace matrices for the all the studies
+cov.md <- by(data_set, data_set$id, function(x) covar.smd(y, sd, n, "md", data = x))
+data_set$md <- unlist(lapply(cov.md, function(x) x$y))
+data_set$vmd <- unlist(lapply(cov.md, function(x) x$v))
 
 # Define knots
-knots <- quantile(ari$dose, c(.25, .5, .75))
+knots <- quantile(data_set$dose, c(.25, .5, .75))
 
 ## Dose-response meta-analysis
 spl <- dosresmeta(formula = y ~ rcs(dose, knots), id = id, sd = sd, n = n, 
-                  covariance = "md", data = ari)
+                  covdata_setance = "md", data = data_set)
 
-## Summary of the model, print coefficients and covariance matrix
+## Summary of the model, print coefficients and covdata_setance matrix
 summary(spl)
 round(coef(spl), 3)
 round(vcov(spl), 2)
@@ -51,7 +44,7 @@ round(vcov(spl), 2)
 
 # Peak dose, CI, and mean difference
 p <- 0.95 # Max effect
-newdata <- data.frame(dose = seq(0, max(ari$dose), length.out = 5000))
+newdata <- data.frame(dose = seq(0, max(data_set$dose), length.out = 5000))
 edp <- with(predict(spl, newdata), 
             doseEff(p = p, dose = newdata$dose, Ep = pred, trunc = FALSE))
 
@@ -76,7 +69,7 @@ cat("Peak Dose:", edp$ED, "mg/day\n")
 cat("95% Confidence Interval for Peak Dose:", ci_peak[[1]], "mg/day\n")
 
 # Generate predictions over a range of doses
-dose_range <- seq(0, max(ari$dose), length.out = 100)
+dose_range <- seq(0, max(data_set$dose), length.out = 100)
 newdata_range <- data.frame(dose = dose_range)
 preds <- predict(spl, newdata = newdata_range)
 
@@ -102,16 +95,16 @@ dark_color <- rgb(120,180,225, maxColorValue=255)
 shadow_color <- rgb(210,235,255, maxColorValue=255)
 gray_line <- rgb(200,200,200, maxColorValue=255)
 
-pdf("PEAKFEV1LAST_Dose-response.pdf", width = 8, height = 6)
+pdf("outcome_Dose-response.pdf", width = 8, height = 6)
 par(mar = c(5, 4, 4, 4) + 1.5, mfrow = c(1, 1), las = 1, bty = "n")
 
-newdata <- data.frame(dose = seq(0, max(ari$dose), length.out = 5000))
+newdata <- data.frame(dose = seq(0, max(data_set$dose), length.out = 5000))
 preds <- predict(spl, newdata)
 
 # First, plot the base graph without adding the lines
 matplot(newdata$dose, preds$pred, type = "n", 
         ylim = c(-20, 225), xlim = c(0, 13),
-        xlab = "Ensifentrine (mg/day)", ylab = "MD of Peak FEV1 (ml): Final Assessment")
+        xlab = "Drug (mg/day)", ylab = "MD of outcome")
 
 # Add shaded area between confidence interval lines
 polygon(c(newdata$dose, rev(newdata$dose)), 
@@ -136,8 +129,8 @@ axis(side = 4, at = edp$Ep[seq(1, 11, 2)], labels = 100 * edp$Eprel[seq(1, 11, 2
 
 text(x = 14.5, y = y_mid, labels = "Relative Efficacy, %", srt = 90, xpd = TRUE)
 
-w <- 1 / ari$vmd[ari$vmd != 0]
-with(subset(ari, dose != 0), 
+w <- 1 / data_set$vmd[data_set$vmd != 0]
+with(subset(data_set, dose != 0), 
      points(dose, md, pch = 21, bg = fill_color, col = dark_color, cex = 2 * w / max(w), lwd = 0.7))
 
 dev.off()
@@ -145,26 +138,26 @@ dev.off()
 
 
 ## Study-specific models (for Figure 2)
-modi <- lapply(split(ari, ari$id), function(x)
+modi <- lapply(split(data_set, data_set$id), function(x)
   dosresmeta(formula = y ~ rcs(dose, knots),
-             sd = sd, n = n, covariance = "md", data = x)
+             sd = sd, n = n, covdata_setance = "md", data = x)
 )
 
 ## Figure 2
 {
-  pdf("PEAKFEV1LAST_Dose-response-PerTrial.pdf", width = 10, height = 6)
+  pdf("outcome_Dose-response-PerTrial.pdf", width = 10, height = 6)
   par(mfrow = c(2, 3), las = 1, bty = "n")
   mapply(function(d, m){
     newdata <- data.frame(dose = seq(0, max(d$dose), length.out = 100))
     with(predict(m, newdata), {
       matplot(newdata$dose, cbind(pred, ci.lb, ci.ub), type = "l", 
               ylim = c(-0.1, 0.5), xlim = c(0, 13), lty = c(1, 2, 3), col = "black",
-              xlab = "Ensifentrine (mg/day)", ylab = "Mean Difference")
+              xlab = "Drug (mg/day)", ylab = "Mean Difference")
     })
     with(d[-1, ], errbar(dose, md, md + 1.96*sqrt(vmd), md - 1.96*sqrt(vmd), 
                          add = T, pch = 15, lty = 3, cap = .02))
     title(d$author[1])
-  }, split(ari, ari$id), modi)
+  }, split(data_set, data_set$id), modi)
   dev.off()
   
   ## Tabular prediction
@@ -174,7 +167,7 @@ modi <- lapply(split(ari, ari$id), function(x)
   
   ## Target doses with 'confidence interval'
   p <- c(.5, .95)
-  newdata <- data.frame(dose = seq(0, max(ari$dose), length.out = 5000))
+  newdata <- data.frame(dose = seq(0, max(data_set$dose), length.out = 5000))
   edp <- with(predict(spl, newdata), 
               doseEff(p = p, dose = newdata$dose, Ep = pred, trunc = FALSE))
   round(edp, 2)
@@ -194,20 +187,20 @@ modi <- lapply(split(ari, ari$id), function(x)
 {
 
 ## 1) Location of knots
-knlist <- combn(quantile(ari$dose, c(.1, .25, .5, .75, .9)), 3, simplify = F)[-c(1, 10)]
+knlist <- combn(quantile(data_set$dose, c(.1, .25, .5, .75, .9)), 3, simplify = F)[-c(1, 10)]
 #do.call(rbind, knlist)
 modi_k <- lapply(knlist, function(k)
   dosresmeta(formula = y ~ rcs(dose, k),
-             sd = sd, n = n, covariance = "md", data = ari)
+             sd = sd, n = n, covdata_setance = "md", data = data_set)
 )
 
-pdf("PEAKFEV1LAST_Dose-response_Sensitivity.pdf", width = 15, height = 6)
+pdf("outcome_Dose-response_Sensitivity.pdf", width = 15, height = 6)
 par(mfrow = c(1, 2))
-newdata <- data.frame(dose = seq(0, max(ari$dose), length.out = 500))
+newdata <- data.frame(dose = seq(0, max(data_set$dose), length.out = 500))
 par(mar = c(5, 4, 4, 4) + 1.5, las = 1, bty = "n")
 with(predict(spl, newdata), {
   plot(newdata$dose, pred, type = "l", col = "white", ylim = c(-0.05, 0.15), 
-       xlim = c(0, 13), xlab = "Ensifentrine (mg/day)", ylab = "Mean Difference")
+       xlim = c(0, 13), xlab = "Drug (mg/day)", ylab = "Mean Difference")
 })
 mapply(function(m, k){
   with(predict(m, newdata), lines(newdata$dose, pred, lty = k))
@@ -222,23 +215,23 @@ dev.off()
 }
 
 ## Predictions
-newdata <- data.frame(dose = seq(0, max(ari$dose), length.out = 500))
+newdata <- data.frame(dose = seq(0, max(data_set$dose), length.out = 500))
 predRCS <- predict(spl, newdata = newdata, xref = 0, expo = FALSE)
 
 # If you want to round and view the predictions
 #round(predRCS, 2)
 
-## Graphical comparison
-pdf("PEAKFEV1LAST_Dose-response_preds.pdf", width = 8, height = 6)
+## Graphical compdata_setson
+pdf("outcome_Dose-response_preds.pdf", width = 8, height = 6)
 par(mar = c(5, 4, 4, 4) + 1.5, las = 1, bty = "n")
 with(predict(spl, newdata), {
   plot(newdata$dose, pred, type = "l", #ylim = c(-0.2, 0.2), xlim = c(0, 13),
-       xlab = "Ensifentrine (mg/day)", ylab = "Mean Difference")
+       xlab = "Drug (mg/day)", ylab = "Mean Difference")
 })
 
 # Add points from the original data
-w <- 1 / ari$vmd[ari$vmd != 0]
-with(subset(ari, dose != 0), points(dose, md, pch = 1, cex = 2 * w / max(w)))
+w <- 1 / data_set$vmd[data_set$vmd != 0]
+with(subset(data_set, dose != 0), points(dose, md, pch = 1, cex = 2 * w / max(w)))
 
 # If desired, add a legend
 legend("topright", legend = "Restricted Cubic Spline", lty = 1, bty = "n")
@@ -267,10 +260,6 @@ results <- do.call("rbind", apply(mvsample, 1, function(y){
 
 ci_ed50 <- round(quantile(results$ED[results$p == 0.5], c(.025, .975), na.rm = TRUE), 2)
 ci_ed95 <- round(quantile(results$ED[results$p == 0.95], c(.025, .975), na.rm = TRUE), 2)
-
-# Output the results for ED50 and ED95
-#cat("ED50 (Median Effective Dose):", ed50$ED, "mg/day\n")
-#cat("95% Confidence Interval for ED50:", ci_ed50, "mg/day\n")
 
 cat("ED95 (95% Effective Dose):", ed95$ED, "mg/day\n")
 cat("95% Confidence Interval for ED95:", ci_ed95, "mg/day\n")
