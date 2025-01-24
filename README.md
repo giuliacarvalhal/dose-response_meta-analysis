@@ -9,9 +9,9 @@ This repository contains R scripts used in our dose-response meta-analysis.
 _R Scripts:_
 
 * Meta_General.R --> perform standard meta-analyses
-* dose_responsed_meta_analysis.R --> perform dose-response meta-analysis via dosresmeta
-* leave_one_out_dose_response.R --> runs leave-one-out sensitivity analyses for the dose-response model.
-* one_stage.R --> perform dose-response meta-analysis for one-stage models (one dose) and aggregate groups to compare them
+* Dose-Response.R --> perform dose-response meta-analysis via dosresmeta
+* Leave_One_Out_Dose_Response..R --> runs leave-one-out sensitivity analyses for the dose-response model.
+* One_Stage.R --> perform dose-response meta-analysis for one-stage models (one dose) and aggregate groups to compare them
 
 **How to Run the Analyses:**
 1. Set up R Environment
