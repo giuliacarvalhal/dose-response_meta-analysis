@@ -1,7 +1,7 @@
 # Set the working directory
-setwd("C:/Users/giuli/Desktop/Ensenfentrine")
+setwd("C:/Users/pathway")
 
-# Load the libraries
+# Load the librdata_setes
 library(dosresmeta)
 library(rms)
 library(mvtnorm)
@@ -16,13 +16,7 @@ library(knitr)
 theme_set(theme_minimal())
 
 # Load dataset
-ari <- read_excel("C:/Users/giuli/Desktop/Ensenfentrine/ari_one_stage.xlsx", sheet = "MORNING")
-
-ari 
-
-# Converter MD (y) e SD de litros para mililitros
-ari$y <- ari$y * 1000
-ari$sd <- ari$sd * 1000
+data_set <- read_excel("C:/Users/pathway/data_set_one_stage.xlsx", sheet = "outcome")
 
 # Auxiliary function to estimate target doses (to be implemented in dosresmeta pkg)
 doseEff <- function(p, dose, Ep, trunc = FALSE){
@@ -34,19 +28,19 @@ doseEff <- function(p, dose, Ep, trunc = FALSE){
   data.frame(p, ED, Ep = p * max_Ep)
 }
 
-## Obtaining mean differences, variances, and (co)varinace matrices for the all the studies
-cov.md <- by(ari, ari$id, function(x) covar.smd(y, sd, n, "md", data = x))
-ari$md <- unlist(lapply(cov.md, function(x) x$y))
-ari$vmd <- unlist(lapply(cov.md, function(x) x$v))
+## Obtaining mean differences, vdata_setances, and (co)vdata_setnace matrices for the all the studies
+cov.md <- by(data_set, data_set$id, function(x) covar.smd(y, sd, n, "md", data = x))
+data_set$md <- unlist(lapply(cov.md, function(x) x$y))
+data_set$vmd <- unlist(lapply(cov.md, function(x) x$v))
 
 # Define knots
-knots <- quantile(ari$dose, c(.25, .5, .75))
+knots <- quantile(data_set$dose, c(.25, .5, .75))
 
 # Step 3: Create Slist for use in meta-analysis
 Slist <- lapply(cov.md, function(x) x$cov)
 
 # Step 4: Assign names to the Slist elements corresponding to the study IDs
-names(Slist) <- unique(ari$id)
+names(Slist) <- unique(data_set$id)
 
 # data for plot and prediction
 newd <- data.frame(dose = seq(0, 12, length.out = 100))
@@ -55,25 +49,25 @@ newd_tab <- data.frame(dose = c(0, 2, 4, 6, 8, 12))
 
 # Splines without exclusion
 spl <- dosresmeta(formula = y ~ rcs(dose, knots), id = id, sd = sd, n = n, 
-                  covariance = "md", data = ari, Slist = Slist, proc = "1stage", method = "reml")
+                  covdata_setance = "md", data = data_set, Slist = Slist, proc = "1stage", method = "reml")
 summary(spl)
 
 # Splines with exclusion
 spl_exc <- dosresmeta(formula = y ~ rcs(dose, knots), id = id, sd = sd, n = n, 
-                      covariance = "md", data = subset(ari, !(id %in% c(7, 8))), method = "reml",
+                      covdata_setance = "md", data = subset(data_set, !(id %in% c(7, 8))), method = "reml",
                       Slist = Slist[!names(Slist) %in% c("7","8" )])
 summary(spl_exc)
 
 # Spline without unpublished data
-spl_exc2 <- dosresmeta(formula = y ~ rcs(dose, knots),id = id, sd = sd, n = n, covariance = "md",
-                        data = subset(ari, !(id %in% c(2, 3, 5,6 ))), proc = "1stage", method = "reml",
+spl_exc2 <- dosresmeta(formula = y ~ rcs(dose, knots),id = id, sd = sd, n = n, covdata_setance = "md",
+                        data = subset(data_set, !(id %in% c(2, 3, 5,6 ))), proc = "1stage", method = "reml",
                         Slist = Slist[!names(Slist) %in% c("2", "3", "5", "6")]
 )
 summary(spl_exc2)
 
 # Spline without unpublished data and at least 28 days of follow-up
-spl_exc3 <- dosresmeta(formula = y ~ rcs(dose, knots),id = id, sd = sd, n = n, covariance = "md",
-                       data = subset(ari, !(id %in% c(2, 3, 5, 6, 9))), proc = "1stage", method = "reml",
+spl_exc3 <- dosresmeta(formula = y ~ rcs(dose, knots),id = id, sd = sd, n = n, covdata_setance = "md",
+                       data = subset(data_set, !(id %in% c(2, 3, 5, 6, 9))), proc = "1stage", method = "reml",
                        Slist = Slist[!names(Slist) %in% c("2", "3", "5", "6", "9")]
 )
 summary(spl_exc3)
@@ -130,7 +124,7 @@ p <- ggplot(all_preds, aes(x = dose, y = pred, color = model, linetype = model))
     linetype = "dashed"
   ) +
   labs(
-    x = "Ensifentrine (mg/day)",
+    x = "Drug (mg/day)",
     y = "Mean Difference",
     color = "Model",
     linetype = "Model",
@@ -149,7 +143,7 @@ p <- ggplot(all_preds, aes(x = dose, y = pred, color = model, linetype = model))
 
 # Save the plot as a PDF
 ggsave(
-  "NEW_MORNING_DOSE-RESPONSE_ONE-STAGE_Four_Models.pdf",
+  "NEW_outcome_DOSE-RESPONSE_ONE-STAGE_Four_Models.pdf",
   plot = p,
   device = "pdf",
   width = 8,
@@ -158,12 +152,12 @@ ggsave(
 
 
 
-# comparison predicted RRS
+# compdata_setson predicted RRS
 round(predict(spl, newd_tab), 2)
 round(predict(spl_exc, newd_tab), 2)
 
 
-# comparison coefficients
+# compdata_setson coefficients
 round(rbind(spl = c(coef(spl), vcov(spl)[-2]),
             spl_exc = c(coef(spl_exc), vcov(spl_exc)[-2])), 5)
 
@@ -194,7 +188,7 @@ p <- ggplot(pred_spl, aes(newd$dose, pred, linetype = "One-stage")) +
   
    #scale_x_continuous(limits = c(0, 12)) +  # Adjust x-axis limits
   scale_y_continuous( breaks = seq(0, 225, by = 25),) +  # Adjust y-axis limits
-  labs(x = "Ensifentrine (mg/day)", y = "Mean Difference", linetype = "Curve") +
+  labs(x = "Drug (mg/day)", y = "Mean Difference", linetype = "Curve") +
   scale_linetype_manual(values = c(`One-stage` = "solid", `Two-stage` = "dashed")) +
   # Add gray horizontal lines across the plot
 
@@ -210,6 +204,6 @@ p <- ggplot(pred_spl, aes(newd$dose, pred, linetype = "One-stage")) +
    )
 
 # Save the plot as a PDF
-ggsave("MORNING_DOSE-RESPONSE_ONE-STAGE.pdf", plot = p, device = "pdf", width = 8, height = 6)
+ggsave("outcome_DOSE-RESPONSE_ONE-STAGE.pdf", plot = p, device = "pdf", width = 8, height = 6)
 }
 
