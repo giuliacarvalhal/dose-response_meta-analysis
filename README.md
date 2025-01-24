@@ -5,25 +5,27 @@ This repository contains data and R scripts used in our systematic review and me
 
 Repository Structure:
 Datasets:
-IMMA_.xlsx  --> data for main meta-analysis
-ari.xlsx --> data for dose-response meta-analysis
-ari_one_stage.xlsx --> data for one-stage model of dose-response meta-analysis
+*IMMA_.xlsx  --> data for main meta-analysis
+*ari.xlsx --> data for dose-response meta-analysis
+*ari_one_stage.xlsx --> data for one-stage model of dose-response meta-analysis
 
 R Scripts:
-meta_analysis.R --> perform standard meta-analyses
-dose_responsed_meta_analysis.R --> perform dose-response meta-analysis via dosresmeta
-leave_one_out_dose_response.R --> runs leave-one-out sensitivity analyses for the dose-response model.
-4_aggregated_curves.R --> perform dose-response meta-analysis for one-stage models (one dose) and aggregate groups to compare them
+*meta_analysis.R --> perform standard meta-analyses
+*dose_responsed_meta_analysis.R --> perform dose-response meta-analysis via dosresmeta
+*leave_one_out_dose_response.R --> runs leave-one-out sensitivity analyses for the dose-response model.
+*aggregated_curves.R --> perform dose-response meta-analysis for one-stage models (one dose) and aggregate groups to compare them
 
 How to Run the Analyses:
 1. Set up R Environment
 Recommended R Version: 4.2.2 (or later)
 Install necessary R packages (if not already installed):
+```r
 install.packages(c(
   "meta", "metafor", "dosresmeta", "tidyverse", "grid", 
   "mvmeta", "gridExtra", "rms", "mvtnorm", "DoseFinding",
   "aod", "readxl", "writexl", "lmtest", "knitr", "directlabels"
 ))
+```
 
 Contact:
 For questions about data extraction or R scripts, contact: Giulia Carvalhal (carvalhalgiulia@gmail.com)
