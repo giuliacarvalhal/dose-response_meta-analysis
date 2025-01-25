@@ -13,10 +13,8 @@ _R Scripts:_
 * Leave_One_Out_Dose_Response..R --> runs leave-one-out sensitivity analyses for the dose-response model.
 * One_Stage.R --> perform dose-response meta-analysis for one-stage models (one dose) and aggregate groups to compare them
 
-**How to Run the Analyses:**
-1. Set up R Environment
+**Dependencies/Packages:**
 Recommended R Version: 4.2.2 (or later)
-Install necessary R packages (if not already installed):
 ```r
 install.packages(c(
   "meta", "metafor", "dosresmeta", "tidyverse", "grid", 
